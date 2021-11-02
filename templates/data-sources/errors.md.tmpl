@@ -1,4 +1,4 @@
-{{define "data_source_errors"}}---
+---
 layout: "bridgecrew"
 page_title: "Bridgecrew: data_source_errors"
 sidebar_current: "docs-bridgecrew-data_source_errors"
@@ -21,4 +21,4 @@ Use this datasource to get the details of your errors from Bridgecrew.
 data "bridgecrew_errors" "myerrors" {
 }
 ```
-{{end}}
+{{ .SchemaMarkdown | trimspace }}
