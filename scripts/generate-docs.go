@@ -36,12 +36,16 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
+
+	"github.com/jameswoolfenden/terraform-provider-bridgecrew/version"
 )
 
 // PageData represents a type of service and enables a template to render
 // different content depending on the service type.
 type PageData struct {
-	ServiceType string
+	ServiceType     string
+	ProviderVersion string
 }
 
 // Page represents a template page to be rendered.
@@ -105,67 +109,27 @@ func main() {
 			name: "resource_policy",
 			path: tempDir + "/resources/policy.md.tmpl",
 		},
-		//,
-		//{
-		//	name: "service_compute",
-		//	path: tempDir + "/resources/service_compute.md.tmpl",
-		//	Data: PageData{
-		//		"wasm",
-		//	},
-		//},
-		//{
-		//	name: "service_dictionary_items_v1",
-		//	path: tempDir + "/resources/service_dictionary_items_v1.md.tmpl",
-		//},
-		//{
-		//	name: "service_acl_entries_v1",
-		//	path: tempDir + "/resources/service_acl_entries_v1.md.tmpl",
-		//},
-		//{
-		//	name: "service_dynamic_snippet_content_v1",
-		//	path: tempDir + "/resources/service_dynamic_snippet_content_v1.md.tmpl",
-		//},
-		//{
-		//	name: "service_waf_configuration",
-		//	path: tempDir + "/resources/service_waf_configuration.md.tmpl",
-		//},
-		//{
-		//	name: "user_v1",
-		//	path: tempDir + "/resources/user_v1.md.tmpl",
-		//},
-		//{
-		//	name: "tls_activation",
-		//	path: tempDir + "/resources/tls_activation.md.tmpl",
-		//},
-		//{
-		//	name: "tls_certificate",
-		//	path: tempDir + "/resources/tls_certificate.md.tmpl",
-		//},
-		//{
-		//	name: "tls_platform_certificate",
-		//	path: tempDir + "/resources/tls_platform_certificate.md.tmpl",
-		//},
-		//{
-		//	name: "tls_private_key",
-		//	path: tempDir + "/resources/tls_private_key.md.tmpl",
-		//},
-		//{
-		//	name: "tls_subscription",
-		//	path: tempDir + "/resources/tls_subscription.md.tmpl",
-		//},
-		//{
-		//	name: "tls_subscription_validation",
-		//	path: tempDir + "/resources/tls_subscription_validation.md.tmpl",
-		//},
+		{
+			name: "resource_simple_policy",
+			path: tempDir + "/resources/simple_policy.md.tmpl",
+		},
 	}
 
-	pages := append(resourcePages, dataPages...)
+	var indexPages = []Page{
+		{
+			name: "index",
+			path: tempDir + "/index.md.tmpl",
+			Data: PageData{
+				ProviderVersion: strings.Replace(version.ProviderVersion, "v", "", 1),
+			},
+		},
+	}
+
+	pages := append(append(indexPages, resourcePages...), dataPages...)
 
 	renderPages(getTemplate(tmplDir), pages)
 
 	appendSyntaxToFiles(tempDir)
-
-	copyIndexToTempDir(tmplDir, tempDir)
 
 	backupTemplatesDir(tmplDir)
 
@@ -188,9 +152,7 @@ func tfPluginDocsExists(tfplugindocsLocation string) bool {
 // files, and parsing all the templates found (ensuring they must parse).
 func getTemplate(tmplDir string) *template.Template {
 	var templateFiles []string
-	log.Print(tmplDir)
 	filepath.Walk(tmplDir, func(path string, info os.FileInfo, err error) error {
-		log.Print(path)
 		if filepath.Ext(path) == ".tmpl" {
 			templateFiles = append(templateFiles, path)
 		}
@@ -200,7 +162,6 @@ func getTemplate(tmplDir string) *template.Template {
 	if err != nil {
 		log.Fatalf("Error parsing template files: %s", err)
 	}
-	log.Print(template)
 	return template
 }
 
@@ -272,44 +233,15 @@ func appendSyntaxToFiles(tempDir string) {
 	})
 }
 
-// copyIndexToTempDir copies the non-templated index.md into our temporary
-// directory so that when we come to replace the repo's /templates with our
-// pre-compiled version, then the tfplugindocs command will be able to include
-// the index.md in the generated output in the /docs directory.
-//
-// The reason the index.md isn't already in our temporary directory of
-// pre-compiled Markdown templates is because the renderPages function is
-// designed to include only files with a .tmpl extension, where as index.md
-// doesn't require any templating.
-func copyIndexToTempDir(tmplDir string, tempDir string) {
-	filename := "/index.md"
-	srcFile := tmplDir + filename
-	dstFile := tempDir + filename
-
-	src, err := os.Open(srcFile)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer src.Close()
-
-	dst, err := os.Create(dstFile)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer dst.Close()
-
-	_, err = io.Copy(dst, src)
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-
 // backupTemplatesDir renames the /templates directory.
 //
 // We do this so that we can create a new /templates directory and move the
 // contents of the temporary directory into the new location. Thus allowing
 // tfplugindocs to be run within the root of the terraform provider repo.
 func backupTemplatesDir(tmplDir string) {
+
+	// os.RemoveAll(tmplDir+"-backup")
+	// err := CopyDir(tmplDir, tmplDir+"-backup")
 	err := os.Rename(tmplDir, tmplDir+"-backup")
 	if err != nil {
 		log.Fatal(err)
@@ -344,4 +276,106 @@ func runTFPluginDocs(tfplugindocsLocation string) {
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+// CopyFile copies the contents of the file named src to the file named
+// by dst. The file will be created if it does not already exist. If the
+// destination file exists, all it's contents will be replaced by the contents
+// of the source file. The file mode will be copied from the source and
+// the copied data is synced/flushed to stable storage.
+func CopyFile(src, dst string) (err error) {
+	in, err := os.Open(src)
+	if err != nil {
+		return
+	}
+	defer in.Close()
+
+	out, err := os.Create(dst)
+	if err != nil {
+		return
+	}
+	defer func() {
+		if e := out.Close(); e != nil {
+			err = e
+		}
+	}()
+
+	_, err = io.Copy(out, in)
+	if err != nil {
+		return
+	}
+
+	err = out.Sync()
+	if err != nil {
+		return
+	}
+
+	si, err := os.Stat(src)
+	if err != nil {
+		return
+	}
+	err = os.Chmod(dst, si.Mode())
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// CopyDir recursively copies a directory tree, attempting to preserve permissions.
+// Source directory must exist, destination directory must *not* exist.
+// Symlinks are ignored and skipped.
+func CopyDir(src string, dst string) (err error) {
+	src = filepath.Clean(src)
+	dst = filepath.Clean(dst)
+
+	si, err := os.Stat(src)
+	if err != nil {
+		return err
+	}
+	if !si.IsDir() {
+		return fmt.Errorf("source is not a directory")
+	}
+
+	_, err = os.Stat(dst)
+	if err != nil && !os.IsNotExist(err) {
+		return
+	}
+	if err == nil {
+		return fmt.Errorf("destination already exists")
+	}
+
+	err = os.MkdirAll(dst, si.Mode())
+	if err != nil {
+		return
+	}
+
+	entries, err := ioutil.ReadDir(src)
+	if err != nil {
+		return
+	}
+
+	for _, entry := range entries {
+		srcPath := filepath.Join(src, entry.Name())
+		dstPath := filepath.Join(dst, entry.Name())
+
+		if entry.IsDir() {
+			err = CopyDir(srcPath, dstPath)
+			if err != nil {
+				return
+			}
+		} else {
+			// Skip symlinks.
+			if entry.Mode()&os.ModeSymlink != 0 {
+				continue
+			}
+
+			err = CopyFile(srcPath, dstPath)
+			if err != nil {
+				return
+			}
+		}
+	}
+
+	return
 }
