@@ -27,6 +27,7 @@ func resourceSimplePolicy() *schema.Resource {
 				Type:     schema.TypeString,
 				ForceNew: true,
 				Computed: false,
+				Description: "The Cloud provider this is for e.g. - aws, gcp, azure",
 				Required: true,
 				ValidateFunc: func(val interface{}, key string) (warns []string, errs []error) {
 					switch val.(string) {
@@ -52,6 +53,7 @@ func resourceSimplePolicy() *schema.Resource {
 				Type:     schema.TypeString,
 				ForceNew: true,
 				Required: true,
+				Description: "The title of the check, needs to be longer than 20 chars - an effort to ensure detailed names",
 				ValidateFunc: func(val interface{}, key string) (warns []string, errs []error) {
 					if len(val.(string)) < 20 {
 						errs = append(errs, fmt.Errorf("%q Title should attempt be meaningful (gt 20 chars)", val))
@@ -62,6 +64,7 @@ func resourceSimplePolicy() *schema.Resource {
 			"severity": {
 				Type:     schema.TypeString,
 				Required: true,
+				Description: "Severity category allows you to indicate importance and this value can determine build or PR failure in the platform",
 				ValidateFunc: func(val interface{}, key string) (warns []string, errs []error) {
 					switch val.(string) {
 					case
@@ -78,6 +81,7 @@ func resourceSimplePolicy() *schema.Resource {
 			"category": {
 				Type:     schema.TypeString,
 				Required: true,
+				Description: "Check category for grouping similar checks",
 				ValidateFunc: func(val interface{}, key string) (warns []string, errs []error) {
 					switch val.(string) {
 					case
@@ -107,6 +111,8 @@ func resourceSimplePolicy() *schema.Resource {
 			"guidelines": {
 				Type:     schema.TypeString,
 				Required: true,
+				Description: "A detailed description helps you understand why the check was written and should include details on how "+
+				             "to fix the violation. The field must more than 50 chars in it, to encourage detail",
 				ValidateFunc: func(val interface{}, key string) (warns []string, errs []error) {
 					if len(val.(string)) < 50 {
 						errs = append(errs, fmt.Errorf("%q Guideline should attempt be helpful (gt 50 chars)", val))
@@ -118,6 +124,7 @@ func resourceSimplePolicy() *schema.Resource {
 				Type:     schema.TypeList,
 				Required: true,
 				MaxItems: 1,
+				Description: "Conditions captures the actual check logic",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"resource_types": {
@@ -151,6 +158,7 @@ func resourceSimplePolicy() *schema.Resource {
 				Type:     schema.TypeSet,
 				MaxItems: 1,
 				Optional: true,
+				Description: "This associates the check to one or many compliance frameworks",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"cis_azure_v11": {

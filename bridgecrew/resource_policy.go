@@ -29,6 +29,7 @@ func resourcePolicy() *schema.Resource {
 				Type:     schema.TypeString,
 				ForceNew: true,
 				Computed: false,
+				Description: "The Cloud provider this is for e.g. - aws, gcp, azure",
 				Required: true,
 				ValidateFunc: func(val interface{}, key string) (warns []string, errs []error) {
 					switch val.(string) {
@@ -54,6 +55,7 @@ func resourcePolicy() *schema.Resource {
 				Type:     schema.TypeSet,
 				MaxItems: 1,
 				Optional: true,
+				Description: "This associates the check to one or many compliance frameworks",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"cis_azure_v11": {
@@ -139,6 +141,7 @@ func resourcePolicy() *schema.Resource {
 			"file": {
 				Type:     schema.TypeString,
 				Required: true,
+				Description: "The is the name of the YAML policy file",
 				ValidateFunc: func(val interface{}, key string) (warns []string, errors []error) {
 
 					code, err := loadFileContent(val.(string))
@@ -157,6 +160,7 @@ func resourcePolicy() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
+				Description: "By providing the source code hash change to the YAML file can be caught and the resource updated",
 			},
 			"last_updated": {
 				Type:     schema.TypeString,
