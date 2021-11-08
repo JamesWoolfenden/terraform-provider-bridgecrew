@@ -26,11 +26,11 @@ func resourcePolicy() *schema.Resource {
 		DeleteContext: resourcePolicyDelete,
 		Schema: map[string]*schema.Schema{
 			"cloud_provider": {
-				Type:     schema.TypeString,
-				ForceNew: true,
-				Computed: false,
+				Type:        schema.TypeString,
+				ForceNew:    true,
+				Computed:    false,
 				Description: "The Cloud provider this is for e.g. - aws, gcp, azure.",
-				Required: true,
+				Required:    true,
 				ValidateFunc: func(val interface{}, key string) (warns []string, errs []error) {
 					switch val.(string) {
 					case
@@ -52,9 +52,9 @@ func resourcePolicy() *schema.Resource {
 				Computed: true,
 			},
 			"benchmarks": {
-				Type:     schema.TypeSet,
-				MaxItems: 1,
-				Optional: true,
+				Type:        schema.TypeSet,
+				MaxItems:    1,
+				Optional:    true,
 				Description: "This associates the check to one or many compliance frameworks.",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -139,8 +139,8 @@ func resourcePolicy() *schema.Resource {
 				},
 			},
 			"file": {
-				Type:     schema.TypeString,
-				Required: true,
+				Type:        schema.TypeString,
+				Required:    true,
 				Description: "This is the name of the YAML policy file.",
 				ValidateFunc: func(val interface{}, key string) (warns []string, errors []error) {
 
@@ -157,9 +157,9 @@ func resourcePolicy() *schema.Resource {
 				},
 			},
 			"source_code_hash": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
 				Description: "By providing the source code hash change to the YAML file can be caught and the resource updated.",
 			},
 			"last_updated": {
@@ -227,7 +227,11 @@ func resourcePolicyCreate(ctx context.Context, d *schema.ResourceData, m interfa
 
 func setPolicy(d *schema.ResourceData) (Policy, error) {
 	myPolicy := Policy{}
-	myPolicy.Benchmarks = setBenchmark(d)
+	myBenchmark, err := setBenchmark(d)
+
+	if err == nil {
+		myPolicy.Benchmarks = myBenchmark
+	}
 
 	filename, hasFilename := d.GetOk("file")
 

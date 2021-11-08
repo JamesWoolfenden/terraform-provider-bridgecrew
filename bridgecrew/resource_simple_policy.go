@@ -24,11 +24,11 @@ func resourceSimplePolicy() *schema.Resource {
 		DeleteContext: resourceSimplePolicyDelete,
 		Schema: map[string]*schema.Schema{
 			"cloud_provider": {
-				Type:     schema.TypeString,
-				ForceNew: true,
-				Computed: false,
+				Type:        schema.TypeString,
+				ForceNew:    true,
+				Computed:    false,
 				Description: "The Cloud provider this is for e.g. - aws, gcp, azure.",
-				Required: true,
+				Required:    true,
 				ValidateFunc: func(val interface{}, key string) (warns []string, errs []error) {
 					switch val.(string) {
 					case
@@ -50,9 +50,9 @@ func resourceSimplePolicy() *schema.Resource {
 				Computed: true,
 			},
 			"title": {
-				Type:     schema.TypeString,
-				ForceNew: true,
-				Required: true,
+				Type:        schema.TypeString,
+				ForceNew:    true,
+				Required:    true,
 				Description: "The title of the check, needs to be longer than 20 chars - an effort to ensure detailed names.",
 				ValidateFunc: func(val interface{}, key string) (warns []string, errs []error) {
 					if len(val.(string)) < 20 {
@@ -62,8 +62,8 @@ func resourceSimplePolicy() *schema.Resource {
 				},
 			},
 			"severity": {
-				Type:     schema.TypeString,
-				Required: true,
+				Type:        schema.TypeString,
+				Required:    true,
 				Description: "Severity category allows you to indicate importance and this value can determine build or PR failure in the platform.",
 				ValidateFunc: func(val interface{}, key string) (warns []string, errs []error) {
 					switch val.(string) {
@@ -79,8 +79,8 @@ func resourceSimplePolicy() *schema.Resource {
 				},
 			},
 			"category": {
-				Type:     schema.TypeString,
-				Required: true,
+				Type:        schema.TypeString,
+				Required:    true,
 				Description: "Check category for grouping similar checks.",
 				ValidateFunc: func(val interface{}, key string) (warns []string, errs []error) {
 					switch val.(string) {
@@ -111,8 +111,8 @@ func resourceSimplePolicy() *schema.Resource {
 			"guidelines": {
 				Type:     schema.TypeString,
 				Required: true,
-				Description: "A detailed description helps you understand why the check was written and should include details on how "+
-				             "to fix the violation. The field must more than 50 chars in it, to encourage detail.",
+				Description: "A detailed description helps you understand why the check was written and should include details on how " +
+					"to fix the violation. The field must more than 50 chars in it, to encourage detail.",
 				ValidateFunc: func(val interface{}, key string) (warns []string, errs []error) {
 					if len(val.(string)) < 50 {
 						errs = append(errs, fmt.Errorf("%q Guideline should attempt be helpful (gt 50 chars)", val))
@@ -121,9 +121,9 @@ func resourceSimplePolicy() *schema.Resource {
 				},
 			},
 			"conditions": {
-				Type:     schema.TypeList,
-				Required: true,
-				MaxItems: 1,
+				Type:        schema.TypeList,
+				Required:    true,
+				MaxItems:    1,
 				Description: "Conditions captures the actual check logic",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -155,9 +155,9 @@ func resourceSimplePolicy() *schema.Resource {
 				},
 			},
 			"benchmarks": {
-				Type:     schema.TypeSet,
-				MaxItems: 1,
-				Optional: true,
+				Type:        schema.TypeSet,
+				MaxItems:    1,
+				Optional:    true,
 				Description: "This associates the check to one or many compliance frameworks.",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -306,7 +306,12 @@ func resourceSimplePolicyCreate(ctx context.Context, d *schema.ResourceData, m i
 
 func setSimplePolicy(d *schema.ResourceData) (simplePolicy, error) {
 	myPolicy := simplePolicy{}
-	myPolicy.Benchmarks = setBenchmark(d)
+	myBenchmark, err := setBenchmark(d)
+
+	if err == nil {
+		myPolicy.Benchmarks = myBenchmark
+	}
+
 	myPolicy.Category = d.Get("category").(string)
 
 	conditions, err := setConditions(d)
@@ -352,23 +357,30 @@ func setConditions(d *schema.ResourceData) ([]Conditions, error) {
 	return conditions, nil
 }
 
-func setBenchmark(d *schema.ResourceData) Benchmark {
-	myBenchmark := (d.Get("benchmarks").(*schema.Set)).List()
+func setBenchmark(d *schema.ResourceData) (Benchmark, error) {
 
+	_, data := d.GetOk("benchmarks")
 	var myItem Benchmark
-	s := myBenchmark[0].(map[string]interface{})
-	myItem.Cisawsv12 = CastToStringList(s["cis_aws_v12"].([]interface{}))
-	myItem.Cisawsv13 = CastToStringList(s["cis_aws_v13"].([]interface{}))
-	myItem.Cisazurev11 = CastToStringList(s["cis_azure_v11"].([]interface{}))
-	myItem.Cisazurev12 = CastToStringList(s["cis_azure_v12"].([]interface{}))
-	myItem.Cisazurev13 = CastToStringList(s["cis_azure_v13"].([]interface{}))
-	myItem.Cisgcpv11 = CastToStringList(s["cis_gcp_v11"].([]interface{}))
-	myItem.Ciskubernetesv15 = CastToStringList(s["cis_kubernetes_v15"].([]interface{}))
-	myItem.Ciskubernetesv16 = CastToStringList(s["cis_kubernetes_v16"].([]interface{}))
-	myItem.Cisdockerv11 = CastToStringList(s["cis_docker_v11"].([]interface{}))
-	myItem.Ciseksv11 = CastToStringList(s["cis_eks_v11"].([]interface{}))
-	myItem.Cisgkev11 = CastToStringList(s["cis_gke_v11"].([]interface{}))
-	return myItem
+
+	if data {
+		myBenchmark := (d.Get("benchmarks").(*schema.Set)).List()
+
+		s := myBenchmark[0].(map[string]interface{})
+		myItem.Cisawsv12 = CastToStringList(s["cis_aws_v12"].([]interface{}))
+		myItem.Cisawsv13 = CastToStringList(s["cis_aws_v13"].([]interface{}))
+		myItem.Cisazurev11 = CastToStringList(s["cis_azure_v11"].([]interface{}))
+		myItem.Cisazurev12 = CastToStringList(s["cis_azure_v12"].([]interface{}))
+		myItem.Cisazurev13 = CastToStringList(s["cis_azure_v13"].([]interface{}))
+		myItem.Cisgcpv11 = CastToStringList(s["cis_gcp_v11"].([]interface{}))
+		myItem.Ciskubernetesv15 = CastToStringList(s["cis_kubernetes_v15"].([]interface{}))
+		myItem.Ciskubernetesv16 = CastToStringList(s["cis_kubernetes_v16"].([]interface{}))
+		myItem.Cisdockerv11 = CastToStringList(s["cis_docker_v11"].([]interface{}))
+		myItem.Ciseksv11 = CastToStringList(s["cis_eks_v11"].([]interface{}))
+		myItem.Cisgkev11 = CastToStringList(s["cis_gke_v11"].([]interface{}))
+		return myItem, nil
+	}
+
+	return myItem, errors.New("no benchmark data")
 }
 
 func resourceSimplePolicyRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
