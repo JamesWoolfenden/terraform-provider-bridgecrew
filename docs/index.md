@@ -22,7 +22,7 @@ terraform {
   required_providers {
     bridgecrew = {
       source = "bridgecrew/bridgecrew"
-      version >= "0.1.8"
+      version >= "0.1.10"
     }
   }
 }
