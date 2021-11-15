@@ -83,6 +83,18 @@ func main() {
 
 	var dataPages = []Page{
 		{
+			name: "data_source_integrations",
+			path: tempDir + "/data-sources/integrations.md.tmpl",
+		},
+		{
+			name: "data_source_users",
+			path: tempDir + "/data-sources/users.md.tmpl",
+		},
+		{
+			name: "data_source_apitokens",
+			path: tempDir + "/data-sources/apitokens.md.tmpl",
+		},
+		{
 			name: "data_source_policies",
 			path: tempDir + "/data-sources/policies.md.tmpl",
 		},

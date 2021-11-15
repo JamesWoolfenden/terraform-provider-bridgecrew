@@ -1,5 +1,13 @@
+output "integrations" {
+  value = data.bridgecrew_integrations.all
+}
+
 output "apitokens" {
   value = data.bridgecrew_apitokens.all
+}
+
+output "users" {
+  value = data.bridgecrew_users.all
 }
 
 #output "branches" {
