@@ -127,10 +127,38 @@ func resourceSimplePolicy() *schema.Resource {
 				},
 			},
 			"conditions": {
-				Type:         schema.TypeString,
-				Required:     true,
-				Description:  "Conditions captures the actual check logic",
-				ValidateFunc: ValidPolicyJSON,
+				Type:        schema.TypeList,
+				Required:    true,
+				MaxItems:    1,
+				Description: "Conditions captures the actual check logic",
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"resource_types": {
+							Type:     schema.TypeList,
+							Required: true,
+							Elem: &schema.Schema{
+								Type: schema.TypeString,
+							},
+						},
+						"cond_type": {
+							Type:     schema.TypeString,
+							Required: true,
+						},
+						"attribute": {
+							Type:     schema.TypeString,
+							Required: true,
+						},
+
+						"operator": {
+							Type:     schema.TypeString,
+							Required: true,
+						},
+						"value": {
+							Type:     schema.TypeString,
+							Required: true,
+						},
+					},
+				},
 			},
 			"benchmarks": {
 				Type:        schema.TypeSet,
@@ -252,7 +280,6 @@ func resourceSimplePolicyCreate(ctx context.Context, d *schema.ResourceData, m i
 	payload := strings.NewReader(string(jsPolicy))
 
 	req, err := http.NewRequest("POST", url, payload)
-	highlight(payload)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -302,10 +329,13 @@ func setSimplePolicy(d *schema.ResourceData) (simplePolicy, error) {
 
 	myPolicy.Category = d.Get("category").(string)
 
-	var jsonMap map[string]interface{}
-	json.Unmarshal([]byte(d.Get("conditions").(string)), &jsonMap)
+	conditions, err := setConditions(d)
 
-	myPolicy.Conditions = jsonMap
+	//Don't set if not set
+	if err != nil {
+		return myPolicy, fmt.Errorf("unable set conditions %q", err)
+	}
+	myPolicy.Conditions = conditions[0]
 
 	myPolicy.Provider = d.Get("cloud_provider").(string)
 	myPolicy.Severity = d.Get("severity").(string)
@@ -314,6 +344,33 @@ func setSimplePolicy(d *schema.ResourceData) (simplePolicy, error) {
 	myPolicy.Frameworks = CastToStringList(d.Get("frameworks").([]interface{}))
 
 	return myPolicy, nil
+}
+
+func setConditions(d *schema.ResourceData) ([]Conditions, error) {
+	conditions := make([]Conditions, 0, 1)
+
+	myConditions := d.Get("conditions").([]interface{})
+
+	if len(myConditions) > 0 {
+		for _, myCondition := range myConditions {
+			temp := myCondition.(map[string]interface{})
+			var Condition Conditions
+			Condition.Value = temp["value"].(string)
+			Condition.CondType = temp["cond_type"].(string)
+			Condition.Attribute = temp["attribute"].(string)
+			Condition.Operator = temp["operator"].(string)
+
+			var myResources []string
+			myResources = CastToStringList(temp["resource_types"].([]interface{}))
+			Condition.ResourceTypes = myResources
+
+			conditions = append(conditions, Condition)
+		}
+	} else {
+		return nil, errors.New("no Conditions Set")
+	}
+
+	return conditions, nil
 }
 
 func setBenchmark(d *schema.ResourceData) (Benchmark, error) {
@@ -384,10 +441,13 @@ func resourceSimplePolicyRead(ctx context.Context, d *schema.ResourceData, m int
 		return diag.FromErr(err)
 	}
 
-	var jsonMap map[string]interface{}
-	json.Unmarshal([]byte(body), &jsonMap)
-	highlight(jsonMap)
-	d.Set("conditions", jsonMap)
+	//myconditions should be an array it currently a map
+	//hence this fudge
+	//todo: once you start passing around condition arrays
+	//this can go
+	myConditions := make([]interface{}, 1)
+	myConditions[0] = typedjson["conditionQuery"]
+	err = d.Set("conditions", myConditions)
 	if err != nil {
 		return diag.FromErr(err)
 	}
