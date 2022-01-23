@@ -1,9 +1,8 @@
 package bridgecrew
 
 import (
-	"os"
-
 	"github.com/mitchellh/go-homedir"
+	"os"
 )
 
 // loadFileContent returns contents of a file in a given path
