@@ -1,3 +1,7 @@
+output "mappings" {
+  value = data.bridgecrew_mappings.new
+}
+
 output "integrations" {
   value = data.bridgecrew_integrations.all
 }
@@ -61,4 +65,8 @@ output "info" {
 
 output "organisation" {
   value = data.bridgecrew_organisation.mine
+}
+
+output "tag" {
+  value = data.bridgecrew_tag.found
 }
