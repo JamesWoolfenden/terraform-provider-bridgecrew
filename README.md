@@ -8,6 +8,7 @@
 [![GitHub All Releases](https://img.shields.io/github/downloads/bridgecrewio/terraform-provider-bridgecrew/total)](https://github.com/bridgecrewio/terraform-provider-bridgecrew/releases)
 ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/bridgecrewio/terraform-provider-bridgecrew)
 ![GitHub issues](https://img.shields.io/github/issues/bridgecrewio/terraform-provider-bridgecrew)
+[![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/6314/badge)](https://bestpractices.coreinfrastructure.org/projects/6314)
 
 This guide is to help you develop/debug the Terraform Bridgecrew provider, to get started you need to obtain and add your secret - your Bridgecrew API key, as an env var,
 BRIDGECREW_API, or it won't work.
